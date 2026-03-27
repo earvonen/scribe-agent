@@ -1,0 +1,79 @@
+# Example OpenShift manifests. Adjust namespaces, image, and secrets for your cluster.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: scribe-agent
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: scribe-agent-config
+data:
+  SCRIBE_WATCH_DIRECTORY: "/var/lib/scribe-agent/inbox"
+  SCRIBE_GIT_CLONE_URL: "https://github.com/earvonen/redhat-screensaver.git"
+  SCRIBE_GIT_BRANCH: "test"
+  SCRIBE_POLL_INTERVAL_SECONDS: "10"
+  SCRIBE_STATE_FILE: "/var/lib/scribe-agent/state.json"
+  SCRIBE_WORKSPACE_ROOT: "/var/lib/scribe-agent/workspaces"
+  LLAMA_STACK_BASE_URL: "http://llamastack-service:8321"
+  LLAMA_STACK_MODEL_ID: "vllm/MiniMax-M2.5"
+  # GitHub auth/PAT may also be used by the GitHub MCP server registered with Llama Stack.
+  SCRIBE_TOOL_GROUP_IDS: "mcp-github"
+  # LLAMA_STACK_MODEL_ID: "your-minimax-or-other-model-id"
+  # SCRIBE_MCP_CREATE_ISSUE_TOOL: "create_issue"
+  # Optional: register MCP SSE endpoints at startup (JSON array)
+  # SCRIBE_MCP_REGISTRATIONS_JSON: '[{"toolgroup_id":"mcp::github","mcp_uri":"http://github-mcp:8080/sse"}]'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scribe-agent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scribe-agent
+  template:
+    metadata:
+      labels:
+        app: scribe-agent
+    spec:
+      serviceAccountName: scribe-agent
+      containers:
+        - name: scribe-agent
+          image: image-registry.openshift-image-registry.svc:5000/agentic-demo/scribe-agent:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          envFrom:
+            - configMapRef:
+                name: scribe-agent-config
+          env:
+            - name: HOME
+              value: /var/lib/scribe-agent
+            # Optional: GITHUB_TOKEN for private HTTPS git clone (not GitHub REST)
+            # - name: GITHUB_TOKEN
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: scribe-agent-github
+            #       key: token
+            # - name: LLAMA_STACK_API_KEY
+            #   valueFrom:
+            #     secretKeyRef:
+            #       name: llama-stack-credentials
+            #       key: api-key
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/scribe-agent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: 256Mi
+            limits:
+              memory: 2Gi
+      volumes:
+        - name: data
+          emptyDir: {}

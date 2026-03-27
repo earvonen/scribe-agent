@@ -1,0 +1,11 @@
+# ImageStream for the Scribe (scribe-agent) container image.
+# After build, reference e.g.
+# image-registry.openshift-image-registry.svc:5000/<namespace>/scribe-agent:<tag>,
+# matching your cluster's internal registry and tag policy.
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: scribe-agent
+  labels:
+    app: scribe-agent
+spec: {}
