@@ -20,7 +20,7 @@ data:
   # GitHub auth/PAT may also be used by the GitHub MCP server registered with Llama Stack.
   SCRIBE_TOOL_GROUP_IDS: "mcp-github"
   # LLAMA_STACK_MODEL_ID: "your-minimax-or-other-model-id"
-  # SCRIBE_MCP_CREATE_ISSUE_TOOL: "create_issue"
+  # SCRIBE_MCP_CREATE_ISSUE_TOOL: "issue_write"
   # Optional: register MCP SSE endpoints at startup (JSON array)
   # SCRIBE_MCP_REGISTRATIONS_JSON: '[{"toolgroup_id":"mcp::github","mcp_uri":"http://github-mcp:8080/sse"}]'
 ---

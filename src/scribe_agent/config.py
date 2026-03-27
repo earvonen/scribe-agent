@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     )
 
     mcp_create_issue_tool: str = Field(
-        "create_issue",
+        "issue_write",
         description="MCP tool name (GitHub) to create issues; invoked via Llama Stack",
         validation_alias="SCRIBE_MCP_CREATE_ISSUE_TOOL",
     )
@@ -67,6 +67,11 @@ class Settings(BaseSettings):
         None,
         description="Optional JSON object merged into create-issue MCP kwargs",
         validation_alias="SCRIBE_MCP_CREATE_ISSUE_EXTRA_JSON",
+    )
+    mcp_invoke_tool_group_id: str | None = Field(
+        None,
+        description="Tool group id for direct MCP invoke_tool (issue_write / create); auto-detected if unset",
+        validation_alias="SCRIBE_MCP_INVOKE_TOOL_GROUP_ID",
     )
 
     agent_implementation_label: str = Field(

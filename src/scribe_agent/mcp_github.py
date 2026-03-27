@@ -13,8 +13,36 @@ from scribe_agent.llama_tools import tool_invocation_content_as_text
 logger = logging.getLogger(__name__)
 
 
-def invoke_mcp_tool(client: LlamaStackClient, tool_name: str, kwargs: dict[str, Any]) -> str:
-    inv = client.tool_runtime.invoke_tool(tool_name=tool_name, kwargs=kwargs)
+def resolve_tool_group_for_tool_name(
+    client: LlamaStackClient,
+    tool_group_ids: list[str],
+    tool_name: str,
+) -> str | None:
+    """Find which registered tool group exposes ``tool_name`` (first match)."""
+    for gid in tool_group_ids:
+        try:
+            defs = client.tool_runtime.list_tools(tool_group_id=gid)
+        except Exception as e:
+            logger.debug("list_tools failed for group %r: %s", gid, e)
+            continue
+        for d in defs:
+            n = getattr(d, "name", None) or (d.get("name") if isinstance(d, dict) else None)
+            if n == tool_name:
+                return gid
+    return None
+
+
+def invoke_mcp_tool(
+    client: LlamaStackClient,
+    tool_name: str,
+    kwargs: dict[str, Any],
+    tool_group_id: str,
+) -> str:
+    inv = client.tool_runtime.invoke_tool(
+        tool_name=tool_name,
+        kwargs=kwargs,
+        extra_body={"tool_group_id": tool_group_id},
+    )
     if inv.error_message:
         raise RuntimeError(f"MCP tool {tool_name!r} failed: {inv.error_message}")
     return tool_invocation_content_as_text(inv.content)
@@ -93,7 +121,19 @@ def create_issue_via_mcp(
     elif isinstance(raw_labels, list):
         kwargs["labels"] = [str(x) for x in raw_labels if str(x).strip()]
 
-    text = invoke_mcp_tool(client, tool, kwargs)
+    if settings.mcp_invoke_tool_group_id:
+        group_id = settings.mcp_invoke_tool_group_id.strip()
+    else:
+        group_id = resolve_tool_group_for_tool_name(
+            client, settings.tool_group_id_list, tool
+        )
+    if not group_id:
+        raise RuntimeError(
+            f"MCP tool {tool!r} not found in any of SCRIBE_TOOL_GROUP_IDS="
+            f"{settings.tool_group_ids!r}. Set SCRIBE_MCP_INVOKE_TOOL_GROUP_ID to the GitHub MCP group id."
+        )
+
+    text = invoke_mcp_tool(client, tool, kwargs, tool_group_id=group_id)
     parsed = parse_json_loose(text)
     if parsed is not None:
         url = _extract_issue_url_from_parsed(parsed)

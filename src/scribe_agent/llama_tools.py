@@ -314,7 +314,11 @@ def run_tool_assisted_fix(
                     result_text = f"unknown tool {fname!r} (not in MCP tool groups)"
                 else:
                     try:
-                        inv = client.tool_runtime.invoke_tool(tool_name=fname, kwargs=args)
+                        inv = client.tool_runtime.invoke_tool(
+                            tool_name=fname,
+                            kwargs=args,
+                            extra_body={"tool_group_id": tg},
+                        )
                         if inv.error_message:
                             result_text = f"error: {inv.error_message}"
                         else:
