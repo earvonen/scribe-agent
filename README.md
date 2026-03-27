@@ -23,7 +23,7 @@ If the source text says an **AI agent**, **coding agent**, or **Developer** agen
 
 ## MCP tool names and kwargs
 
-Defaults assume common GitHub MCP parameters for `issue_write`: `owner`, `repo`, `title`, `body`, and optionally `labels` as a **list of strings**. If your server differs, set **`SCRIBE_MCP_CREATE_ISSUE_EXTRA_JSON`** to merge extra kwargs or override names.
+Defaults assume GitHub MCP **`issue_write`**: `method` (default **`create`** for new issues), `owner`, `repo`, `title`, `body`, and optionally **`labels`** as a list of strings. Use **`SCRIBE_MCP_CREATE_ISSUE_EXTRA_JSON`** / **`SCRIBE_MCP_CREATE_ISSUE_METHOD`** if your server differs.
 
 ## Run locally
 
@@ -61,6 +61,7 @@ podman build -f Containerfile -t scribe-agent:latest .
 | `SCRIBE_WATCH_RECURSIVE` | No | `false` | If `true`, scan subdirectories for `*.txt`. |
 | `SCRIBE_MCP_CREATE_ISSUE_TOOL` | No | `issue_write` | MCP tool name for creating issues. |
 | `SCRIBE_MCP_CREATE_ISSUE_EXTRA_JSON` | No | — | JSON object merged into create-issue kwargs. |
+| `SCRIBE_MCP_CREATE_ISSUE_METHOD` | No | — | GitHub MCP **`issue_write`** requires `method` (e.g. `create` for a new issue). If unset and the tool is `issue_write`, Scribe sends `method: "create"`. Override if your server uses different values. |
 | `SCRIBE_MCP_INVOKE_TOOL_GROUP_ID` | No | — | Tool **group** id that serves GitHub MCP (same as one entry in `SCRIBE_TOOL_GROUP_IDS`). If unset, Scribe picks the first group that lists `SCRIBE_MCP_CREATE_ISSUE_TOOL` (default `issue_write`). Required by Llama Stack when `invoke_tool` must not conflate tool names with group ids. |
 | `SCRIBE_AGENT_IMPLEMENTATION_LABEL` | No | `agent` | Label when the text assigns work to an AI/Developer agent. |
 | `SCRIBE_POLL_INTERVAL_SECONDS` | No | `60` | Sleep between scans. |

@@ -68,6 +68,11 @@ class Settings(BaseSettings):
         description="Optional JSON object merged into create-issue MCP kwargs",
         validation_alias="SCRIBE_MCP_CREATE_ISSUE_EXTRA_JSON",
     )
+    mcp_create_issue_method: str | None = Field(
+        None,
+        description="GitHub MCP issue_write: required `method` (e.g. create). If unset and tool is issue_write, defaults to create",
+        validation_alias="SCRIBE_MCP_CREATE_ISSUE_METHOD",
+    )
     mcp_invoke_tool_group_id: str | None = Field(
         None,
         description="Tool group id for direct MCP invoke_tool (issue_write / create); auto-detected if unset",

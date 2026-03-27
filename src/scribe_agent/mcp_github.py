@@ -72,6 +72,25 @@ def parse_json_loose(text: str) -> Any:
     return None
 
 
+def _ensure_issue_write_method(kwargs: dict[str, Any], tool: str, method_setting: str | None) -> None:
+    """GitHub MCP ``issue_write`` requires a ``method`` argument (e.g. ``create``)."""
+    if "method" in kwargs and kwargs["method"] is not None and str(kwargs["method"]).strip():
+        return
+    explicit = (method_setting or "").strip()
+    if explicit:
+        kwargs["method"] = explicit
+    elif tool.strip() == "issue_write":
+        kwargs["method"] = "create"
+
+
+def _response_looks_like_tool_failure(text: str) -> bool:
+    """MCP sometimes returns HTTP 200 with a plain-text error in the body."""
+    t = text.strip().lower()
+    if not t:
+        return False
+    return "missing required parameter" in t or "required parameter:" in t
+
+
 def _extract_issue_url_from_parsed(parsed: Any) -> str | None:
     if isinstance(parsed, dict):
         if "html_url" in parsed and isinstance(parsed["html_url"], str):
@@ -121,6 +140,8 @@ def create_issue_via_mcp(
     elif isinstance(raw_labels, list):
         kwargs["labels"] = [str(x) for x in raw_labels if str(x).strip()]
 
+    _ensure_issue_write_method(kwargs, tool, settings.mcp_create_issue_method)
+
     if settings.mcp_invoke_tool_group_id:
         group_id = settings.mcp_invoke_tool_group_id.strip()
     else:
@@ -134,6 +155,8 @@ def create_issue_via_mcp(
         )
 
     text = invoke_mcp_tool(client, tool, kwargs, tool_group_id=group_id)
+    if _response_looks_like_tool_failure(text):
+        raise RuntimeError(text.strip())
     parsed = parse_json_loose(text)
     if parsed is not None:
         url = _extract_issue_url_from_parsed(parsed)
